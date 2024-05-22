@@ -1,0 +1,86 @@
+# values.yaml
+environment: qa
+
+pvc:
+  name: internal-pvc-nfs
+
+containerPort: 8080
+service:
+  name: nightly-cron
+  port: 80
+  type: LoadBalancer
+  targetPort: 5000
+
+
+cloudProvider: azure
+pullSecretName: "acr-registry"
+
+
+rasteringestion:
+  image: 
+      repository: acrarolibotnonprod.azurecr.io/e2e_tests
+      tag: 1.1.9
+  # command: "service1_command"
+  env_vars:
+    CONF_FILE: "/layerSources/test_dir/configurations/qa-configuration.json"
+    REPORTS_PATH: "/layerSources/automation/nightly/logs"
+# rasterUpdate:
+#   image: 
+#       repository: 
+#       tag: 
+#   command: "service2_command"
+#   env_vars:
+#     ENV_VAR2: "value_for_service2"
+
+rasterexport:
+  enabled: true
+  image: 
+      repository: acrarolibotnonprod.azurecr.io/automation/export-test-graph
+      tag:  3.2.4
+  env_vars:
+    url: "https://common-export-management-nginx-route-qa.apps.j1lk3njp.eastus.aroapp.io"
+    certification:
+    domain: RASTER
+    token: "eyJhbGciOiJSUzI1NiIsImtpZCI6Ik1hcENvbG9uaWVzUUEifQ.eyJkIjpbInJhc3RlciIsInJhc3RlcldtcyIsInJhc3RlckV4cG9ydCIsImRlbSIsInZlY3RvciIsIjNkIl0sImlhdCI6MTY2Mzg2MzM0Mywic3ViIjoiTWFwQ29sb25pZXNRQSIsImlzcyI6Im1hcGNvbG9uaWVzLXRva2VuLWNsaSJ9.U_sx0Rsy96MA3xpIcWQHJ76xvK0PlHa--J1YILBYm2fCwtDdM4HLGagwq-OQQnBqi2e8KwktQ7sgt27hOJIPBHuONQS0ezBbuByk6UqN2S7P8WERdt8_lejuR1c94owQq7FOkhEaj_PKJ64ehXuMMHskfNeAIBf8GBN6QUGEenVx2w5k2rYBULoU30rpFkQVo8TtmiK2yGx0Ssx2k6LqSgCZfyZJbFzZ2MH3BPeCVleP1-zypaF9DS7SxS-EutL-gZ1e9bEccNktxQA4VMcjeTv45KYJLTIrccs_8gtPlzfaeNQFTIUKD-cRD1gyd_uLatPsl0wwHyFZIgRuJtcvfw"
+    record_id: '70303cfb-4faa-4812-a934-33834e0182d2'
+    trigger_task_create: "export-tasks"
+    required_resolution: 0.0000858306884765625
+    export_count: 3
+    foot_prints_file: "/layerSources/automation/nightly/files/footprints_5kmr_ayosh.txt"
+    path_to_products: "/mnt/download"
+    image_name: "export_callback_graph.png"
+    logger_path: "/layerSources/automation/nightly/logs"
+    callback_url: "http://night-cron-rasterexport-route-qa.apps.j1lk3njp.eastus.aroapp.io/webhook"
+    logger_name: "export-test-daily"
+colletlogs:
+  image: 
+    repository: acrarolibotnonprod.azurecr.io/automation/automation-collector
+    tag: v3.7
+  command: "service4_command"
+  env_vars:
+    slack_url: "https://hooks.slack.com/services/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"
+    folder_collect_logs: 'http://export-backups-route-raster-qa.apps.j1lk3njp.eastus.aroapp.io'
+    logger_path: "/layerSources/automation/nightly/logs"
+    pg_credential: '{"pg_host": "10.0.4.4","pg_user": "postgres","pg_port": "5432","pg_pass": "Libot4allnonprod","pg_db": "automation","pg_schema": "public","pg_table": "DailyTestResult" }'
+    tag_version: v1_cron
+
+
+
+replicaCount: 1
+subPathVolume: ingestion-source
+serviceAccount:
+  create: true
+  name: nightly-automation
+
+ingress:
+  enabled: false
+  host: ""  # Set your desired host
+  path: /
+  annotations: {}
+
+route:
+  enabled: true
+  annotations: {}
+
+autoscaling:
+  enabled: false

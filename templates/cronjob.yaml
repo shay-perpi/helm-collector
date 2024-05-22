@@ -1,0 +1,55 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: {{ .Release.Name }}-cronjob
+spec:
+  schedule: "48 6 * * *"
+  concurrencyPolicy: "Forbid"
+  suspend: false
+  successfulJobsHistoryLimit: 2
+  failedJobsHistoryLimit: 1
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          containers:
+          - name: rasterexport-container
+            ports:
+             - containerPort: 5000
+            volumeMounts:
+            - name: pvc-data
+              mountPath: /layerSources
+              subPath: {{ .Values.subPathVolume }}
+            image: {{ .Values.rasterexport.image.repository }}:{{ .Values.rasterexport.image.tag }}
+            env:
+            {{- range $key, $value := .Values.rasterexport.env_vars }}
+            - name: {{ $key }}
+              value: {{ $value | quote }}
+            {{- end }}          
+          - name: rasteringestion-container
+            volumeMounts:
+            - name: pvc-data
+              mountPath: /layerSources
+              subPath: {{ .Values.subPathVolume }}              
+            image: {{ .Values.rasteringestion.image.repository }}:{{ .Values.rasteringestion.image.tag }}
+            env:
+            {{- range $key, $value := .Values.rasteringestion.env_vars }}
+            - name: {{ $key }}
+              value: {{ $value | quote }}
+            {{- end }}             
+          - name: colletlogs-container
+            volumeMounts:
+            - name: pvc-data
+              mountPath: /layerSources
+              subPath: {{ .Values.subPathVolume }}              
+            image: {{ .Values.colletlogs.image.repository }}:{{ .Values.colletlogs.image.tag }}
+            env:
+            {{- range $key, $value := .Values.colletlogs.env_vars }}
+            - name: {{ $key }}
+              value: {{ $value | quote }}
+            {{- end }}                      
+          restartPolicy: Never                    
+          volumes:
+            - name: pvc-data
+              persistentVolumeClaim:
+                claimName: {{ .Values.pvc.name }}

@@ -1,0 +1,4 @@
+apiVersion: v2
+name: automation-daily
+description: A Helm chart for deploying an application with a PVC in OpenShift
+version: 1.0.0
