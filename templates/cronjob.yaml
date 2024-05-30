@@ -1,55 +1,175 @@
-apiVersion: batch/v1
+apiVersion: batch/v1beta1
 kind: CronJob
 metadata:
-  name: {{ .Release.Name }}-cronjob
+  name: {{ .Release.Name }}-scheduled-cronjob
 spec:
-  schedule: "48 6 * * *"
-  concurrencyPolicy: "Forbid"
-  suspend: false
-  successfulJobsHistoryLimit: 2
-  failedJobsHistoryLimit: 1
+  schedule: {{ .Values.schedule }} # Adjust the schedule as needed
   jobTemplate:
     spec:
       template:
         spec:
           containers:
           - name: rasterexport-container
-            ports:
-             - containerPort: 5000
-            volumeMounts:
-            - name: pvc-data
-              mountPath: /layerSources
-              subPath: {{ .Values.subPathVolume }}
             image: {{ .Values.rasterexport.image.repository }}:{{ .Values.rasterexport.image.tag }}
             env:
             {{- range $key, $value := .Values.rasterexport.env_vars }}
             - name: {{ $key }}
               value: {{ $value | quote }}
-            {{- end }}          
-          - name: rasteringestion-container
+            {{- end }}
             volumeMounts:
             - name: pvc-data
               mountPath: /layerSources
-              subPath: {{ .Values.subPathVolume }}              
+              subPath: {{ .Values.subPathVolume }}
+          restartPolicy: Never
+          volumes:
+          - name: pvc-data
+            persistentVolumeClaim:
+              claimName: {{ .Values.pvc.name }}
+
+---
+apiVersion: batch/v1beta1
+kind: CronJob
+metadata:
+  name: {{ .Release.Name }}-rasteringestion-job
+spec:
+  schedule: {{ .Values.schedule }} # Adjust the schedule as needed
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          serviceAccountName: automation
+          initContainers:
+          - name: wait-for-rasterexport
+            image: bitnami/kubectl:1.27
+            command:
+                - sh
+                - -c
+                - |
+                  #!/bin/bash
+
+                  # Define the cron job prefix
+                  CRONJOB_PREFIX="night-cron-scheduled"
+                  NAMESPACE="qa" # Replace with your namespace if different
+
+                  # Function to get the job name based on the cron job prefix
+                  get_job_name() {
+                    kubectl get jobs -n "$NAMESPACE" --selector=job-name | awk '/^'"$CRONJOB_PREFIX"'/{print $1}'
+                  }
+
+                  # Wait for the job to appear
+                  echo "Waiting for job with prefix $CRONJOB_PREFIX to appear..."
+                  while true; do
+                    JOB_NAME=$(get_job_name)
+                    if [ -n "$JOB_NAME" ]; then
+                      echo "Found job: $JOB_NAME"
+                      break
+                    fi
+                    sleep 5
+                  done
+
+                  # Function to check if the job has completed
+                  is_job_completed() {
+                    kubectl get job "$JOB_NAME" -n "$NAMESPACE" -o jsonpath='{.status.succeeded}' | grep -q "1"
+                  }
+
+                  # Wait for the job to complete
+                  echo "Waiting for job $JOB_NAME to complete..."
+                  while true; do
+                    if is_job_completed; then
+                      echo "Job $JOB_NAME has completed successfully."
+                      break
+                    fi
+                    sleep 5
+                  done
+          containers:
+          - name: rasteringestion-container
             image: {{ .Values.rasteringestion.image.repository }}:{{ .Values.rasteringestion.image.tag }}
             env:
             {{- range $key, $value := .Values.rasteringestion.env_vars }}
             - name: {{ $key }}
               value: {{ $value | quote }}
-            {{- end }}             
-          - name: colletlogs-container
+            {{- end }}
             volumeMounts:
             - name: pvc-data
               mountPath: /layerSources
-              subPath: {{ .Values.subPathVolume }}              
-            image: {{ .Values.colletlogs.image.repository }}:{{ .Values.colletlogs.image.tag }}
-            env:
-            {{- range $key, $value := .Values.colletlogs.env_vars }}
-            - name: {{ $key }}
-              value: {{ $value | quote }}
-            {{- end }}                      
-          restartPolicy: Never                    
+              subPath: {{ .Values.subPathVolume }}
+          restartPolicy: Never
           volumes:
-            - name: pvc-data
-              persistentVolumeClaim:
-                claimName: {{ .Values.pvc.name }}
+          - name: pvc-data
+            persistentVolumeClaim:
+              claimName: {{ .Values.pvc.name }}
+
+---
+apiVersion: batch/v1beta1
+kind: CronJob
+metadata:
+  name: {{ .Release.Name }}-colletlogs-job
+spec:
+  schedule: {{ .Values.schedule }}  # Adjust the schedule as needed
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          serviceAccountName: automation
+          initContainers:
+          - name: wait-for-rasteringestion
+            image: bitnami/kubectl:1.27
+            command:
+                - sh
+                - -c
+                - |
+                  #!/bin/bash
+
+                  # Define the cron job prefix
+                  CRONJOB_PREFIX="night-cron-rasteringestion"
+                  NAMESPACE="qa" # Replace with your namespace if different
+
+                  # Function to get the job name based on the cron job prefix
+                  get_job_name() {
+                    kubectl get jobs -n "$NAMESPACE" --selector=job-name | awk '/^'"$CRONJOB_PREFIX"'/{print $1}'
+                  }
+
+                  # Wait for the job to appear
+                  echo "Waiting for job with prefix $CRONJOB_PREFIX to appear..."
+                  while true; do
+                    JOB_NAME=$(get_job_name)
+                    if [ -n "$JOB_NAME" ]; then
+                      echo "Found job: $JOB_NAME"
+                      break
+                    fi
+                    sleep 5
+                  done
+
+                  # Function to check if the job has completed
+                  is_job_completed() {
+                    kubectl get job "$JOB_NAME" -n "$NAMESPACE" -o jsonpath='{.status.succeeded}' | grep -q "1"
+                  }
+
+                  # Wait for the job to complete
+                  echo "Waiting for job $JOB_NAME to complete..."
+                  while true; do
+                    if is_job_completed; then
+                      echo "Job $JOB_NAME has completed successfully."
+                      break
+                    fi
+                    sleep 5
+                  done
+          containers:
+            - name: colletlogs-container
+              image: {{ .Values.colletlogs.image.repository }}:{{ .Values.colletlogs.image.tag }}
+              env:
+              {{- range $key, $value := .Values.colletlogs.env_vars }}
+              - name: {{ $key }}
+                value: {{ $value | quote }}
+              {{- end }}
+              volumeMounts:
+              - name: pvc-data
+                mountPath: /layerSources
+                subPath: {{ .Values.subPathVolume }}
+          restartPolicy: Never
+          volumes:
+          - name: pvc-data
+            persistentVolumeClaim:
+              claimName: {{ .Values.pvc.name }}
+
+
