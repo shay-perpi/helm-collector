@@ -14,11 +14,10 @@ pvc:
   name: internal-pvc-nfs
 
 containerPort: 8080
-
 service:
   name: nightly-cron
   port: 80
-  type: LoadBalancer
+  type: NodePort
   targetPort: 5000
 
 cloudProvider: azure
@@ -35,7 +34,7 @@ rasteringestion:
 orchestrator:
   env_vars: {}
 
-schedule:  "59 10 * * *"
+schedule:  "50 10 * * *"
 
 rasterexport:
   enabled: true
@@ -50,7 +49,7 @@ rasterexport:
     record_id: '70303cfb-4faa-4812-a934-33834e0182d2'
     trigger_task_create: "export-tasks"
     required_resolution: 0.0000858306884765625
-    export_count: 3
+    export_count: 2
     foot_prints_file: "/layerSources/automation/nightly/files/footprints_5kmr_ayosh.txt"
     path_to_products: "/mnt/download"
     image_name: "export_callback_graph.png"
