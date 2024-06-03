@@ -34,7 +34,7 @@ rasteringestion:
 orchestrator:
   env_vars: {}
 
-schedule:  "50 10 * * *"
+schedule:  "2 7 * * *"
 
 rasterexport:
   enabled: true
@@ -54,7 +54,7 @@ rasterexport:
     path_to_products: "/mnt/download"
     image_name: "export_callback_graph.png"
     logger_path: "/layerSources/automation/nightly/logs"
-    callback_url: "http://night-cron-rasterexport-route-qa.apps.j1lk3njp.eastus.aroapp.io/webhook"
+    callback_url: "https://night-cron-rasterexport-route-qa.apps.j1lk3njp.eastus.aroapp.io/webhook"
     logger_name: "export-test-daily"
 
 colletlogs:

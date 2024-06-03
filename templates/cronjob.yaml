@@ -56,7 +56,7 @@ spec:
                   #!/bin/bash
 
                   # Define the cron job prefix
-                  CRONJOB_PREFIX="night-cron-rasterexport"
+                  CRONJOB_PREFIX="{{ .Release.Name }}-rasterexport"
                   NAMESPACE="qa" # Replace with your namespace if different
 
                   # Function to get the job name based on the cron job prefix
@@ -129,7 +129,7 @@ spec:
                   #!/bin/bash
 
                   # Define the cron job prefix
-                  CRONJOB_PREFIX="night-cron-rasteringestion"
+                  CRONJOB_PREFIX="{{ .Release.Name }}-rasteringestion"
                   NAMESPACE="qa" # Replace with your namespace if different
 
                   # Function to get the job name based on the cron job prefix
