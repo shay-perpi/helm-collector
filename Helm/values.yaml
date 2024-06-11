@@ -20,8 +20,6 @@ service:
   type: NodePort
   targetPort: 5000
 
-schedule:  "10 * * * *"
-
 cloudProvider: azure
 pullSecretName: "acr-registry"
 
@@ -32,14 +30,11 @@ rasteringestion:
   env_vars:
     CONF_FILE: "/layerSources/test_dir/configurations/qa-configuration.json"
     REPORTS_PATH: "/layerSources/automation/nightly/logs"
-    SSL_CERT_FILE: /usr/local/share/ca-certificates/ca.crt
-    REQUEST_CA_BUNDLE:
-    CURL_CA_BUNDLE:
-
 
 orchestrator:
   env_vars: {}
 
+schedule:  "2 7 * * *"
 
 rasterexport:
   enabled: true
@@ -50,7 +45,7 @@ rasterexport:
     url: "https://export-qa.mapcolonies.net"
     certification: ""
     domain: RASTER
-    token: "eyJhbGciOiJSUzI1NiIsImtpZCI6Ik1hcENvbG9uaWVzUUEifQ.eyJkIjpbInJhc3RlciIsInJhc3RlcldtcyIsInJhc3RlckV4cG9ydCIsImRlbSIsInZlY3RvciIsIjNkIl0sImlhdCI6MTY2Mzg2MzM0Mywic3ViIjoiTWFwQ29sb25pZXNRQSIsImlzcyI6Im1hcGNvbG9uaWVzLXRva2VuLWNsaSJ9.U_sx0Rsy96MA3xpIcWQHJ76xvK0PlHa--J1YILBYm2fCwtDdM4HLGagwq-OQQnBqi2e8KwktQ7sgt27hOJIPBHuONQS0ezBbuByk6UqN2S7P8WERdt8_lejuR1c94owQq7FOkhEaj_PKJ64ehXuMMHskfNeAIBf8GBN6QUGEenVx2w5k2rYBULoU30rpFkQVo8TtmiK2yGx0Ssx2k6LqSgCZfyZJbFzZ2MH3BPeCVleP1-zypaF9DS7SxS-EutL-gZ1e9bEccNktxQA4VMcjeTv45KYJLTIrccs_8gtPlzfaeNQFTIUKD-cRD1gyd_uLatPsl0wwHyFZIgRuJtcvfw"
+    token: #Enter token for export .
     record_id: '70303cfb-4faa-4812-a934-33834e0182d2'
     trigger_task_create: "export-tasks"
     required_resolution: 0.0000858306884765625
@@ -65,7 +60,7 @@ rasterexport:
 colletlogs:
   image: 
     repository: acrarolibotnonprod.azurecr.io/automation/automation-collector
-    tag: v4.9.6
+    tag: v4.9.2
   command: "service4_command"
   env_vars:
     slack_url: "https://hooks.slack.com/services/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"
